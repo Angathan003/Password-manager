@@ -1,5 +1,5 @@
 from cryptography.fernet import Fernet
-
+import re
 
 # def write_key():
 #     key = Fernet.generate_key()
@@ -31,9 +31,24 @@ def add():
     name = input('Account Name: ')
     pwd = input("Password: ")
 
+    while not is_strong_password(pwd):
+        print("Password does not meet the criteria for strength.")
+        print("Please make sure it is at least 8 characters long and contains at least one uppercase letter, "
+              "one lowercase letter, one digit, and one special character.")
+        pwd = input("Password: ")
+
     with open('passwords.txt', 'a') as f:
         f.write(name + "|" + fer.encrypt(pwd.encode()).decode() + "\n")
 
+def is_strong_password(password):
+    # Password strength criteria:
+    # At least 8 characters long
+    # Contains at least one uppercase letter
+    # Contains at least one lowercase letter
+    # Contains at least one digit
+    # Contains at least one special character
+    pattern = r"^(?=.*[a-z])(?=.*[A-Z])(?=.*\d)(?=.*[@$!%*?&])[A-Za-z\d@$!%*?&]{8,}$"
+    return re.match(pattern, password)\
 
 while True:
     mode = input(
