@@ -3,17 +3,36 @@ import re
 import tkinter as tk
 from tkinter import messagebox
 
-# Functions for password manager
-
 def is_strong_password(password):
-    # Password strength criteria:
-    # At least 8 characters long
-    # Contains at least one uppercase letter
-    # Contains at least one lowercase letter
-    # Contains at least one digit
-    # Contains at least one special character
     pattern = r"^(?=.*[a-z])(?=.*[A-Z])(?=.*\d)(?=.*[@$!%*?&])[A-Za-z\d@$!%*?&]{8,}$"
     return re.match(pattern, password)
+
+def authenticate(username, password):
+    valid_username = "user123"
+    valid_password = "P@ssw0rd"
+    return username == valid_username and password == valid_password
+
+def register():
+    username = reg_username_entry.get()
+    password = reg_password_entry.get()
+    interspace = interspace_entry.get()
+
+    if not is_strong_password(password):
+        messagebox.showerror("Weak Password", "Password does not meet the criteria for strength.")
+        return
+
+    print(f"New User Registration:\nUsername: {username}\nPassword: {password}\nInterspace: {interspace}")
+    messagebox.showinfo("Success", "Registration successful. You can now log in.")
+    clear_registration_fields()
+
+def clear_registration_fields():
+    reg_username_entry.delete(0, tk.END)
+    reg_password_entry.delete(0, tk.END)
+    interspace_entry.delete(0, tk.END)
+
+def interspace_recovery():
+    interspace = "Your interspace is the name of your first pet."
+    messagebox.showinfo("Interspace Recovery", interspace)
 
 def add_password():
     name = account_name_entry.get()
@@ -24,8 +43,7 @@ def add_password():
         return
 
     with open('passwords.txt', 'a') as f:
-        encrypted_pwd = fer.encrypt(pwd.encode()).decode()
-        f.write(name + "|" + encrypted_pwd + "\n")
+        f.write(name + "|" + fer.encrypt(pwd.encode()).decode() + "\n")
     
     messagebox.showinfo("Success", "Password added successfully.")
     account_name_entry.delete(0, tk.END)
@@ -52,40 +70,135 @@ def view_passwords():
     except FileNotFoundError:
         messagebox.showinfo("No Passwords", "No passwords found.")
 
+def generate_new_key():
+    return Fernet.generate_key()
+
 def load_key():
     try:
-        with open("key.key", "rb") as key_file:
-            return key_file.read()
+        with open('key.key', 'rb') as key_file:
+            key = key_file.read()
     except FileNotFoundError:
-        return Fernet.generate_key()
+        key = generate_new_key()
+        with open('key.key', 'wb') as key_file:
+            key_file.write(key)
+    return key
 
-# GUI setup
 root = tk.Tk()
 root.title("Password Manager")
 
-# Load encryption key
 key = load_key()
 fer = Fernet(key)
 
-# Account Name Label and Entry
-account_name_label = tk.Label(root, text="Account Name:")
-account_name_label.pack()
-account_name_entry = tk.Entry(root)
-account_name_entry.pack()
+logged_in_frame = tk.Frame(root)
+logged_in_frame.pack()
 
-# Password Label and Entry
-password_label = tk.Label(root, text="Password:")
+username_label = tk.Label(logged_in_frame, text="Username:")
+username_label.pack()
+username_entry = tk.Entry(logged_in_frame)
+username_entry.pack()
+
+password_label = tk.Label(logged_in_frame, text="Password:")
 password_label.pack()
-password_entry = tk.Entry(root, show="*")
+password_entry = tk.Entry(logged_in_frame, show="*")
 password_entry.pack()
 
-# Add Password Button
-add_button = tk.Button(root, text="Add Password", command=add_password)
+def login():
+    username = username_entry.get()
+    password = password_entry.get()
+
+    if authenticate(username, password):
+        logged_in_frame.pack_forget()
+        main_frame.pack()
+    else:
+        messagebox.showerror("Authentication Failed", "Invalid username or password.")
+        username_entry.delete(0, tk.END)
+        password_entry.delete(0, tk.END)
+
+login_button = tk.Button(logged_in_frame, text="Login", command=login)
+login_button.pack()
+
+main_frame = tk.Frame(root)
+
+account_name_label = tk.Label(main_frame, text="Account Name:")
+account_name_label.pack()
+account_name_entry = tk.Entry(main_frame)
+account_name_entry.pack()
+
+password_label = tk.Label(main_frame, text="Password:")
+password_label.pack()
+password_entry = tk.Entry(main_frame, show="*")
+password_entry.pack()
+
+add_button = tk.Button(main_frame, text="Add Password", command=add_password)
 add_button.pack()
 
-# View Passwords Button
-view_button = tk.Button(root, text="View Passwords", command=view_passwords)
+view_button = tk.Button(main_frame, text="View Passwords", command=view_passwords)
 view_button.pack()
 
-# Run the main event loop
+main_frame.pack_forget()
+
+reg_frame = tk.Frame(root)
+
+reg_username_label = tk.Label(reg_frame, text="Username:")
+reg_username_label.pack()
+reg_username_entry = tk.Entry(reg_frame)
+reg_username_entry.pack()
+
+reg_password_label = tk.Label(reg_frame, text="Password:")
+reg_password_label.pack()
+reg_password_entry = tk.Entry(reg_frame, show="*")
+reg_password_entry.pack()
+
+interspace_label = tk.Label(reg_frame, text="Interspace:")
+interspace_label.pack()
+interspace_entry = tk.Entry(reg_frame)
+interspace_entry.pack()
+
+register_button = tk.Button(reg_frame, text="Register", command=register)
+register_button.pack()
+
+reg_frame.pack_forget()
+
+interspace_frame = tk.Frame(root)
+
+interspace_label_recovery = tk.Label(interspace_frame, text="Interspace Recovery:")
+interspace_label_recovery.pack()
+interspace_entry_recovery = tk.Entry(interspace_frame)
+interspace_entry_recovery.pack()
+
+recover_interspace_button = tk.Button(interspace_frame, text="Recover Interspace", command=interspace_recovery)
+recover_interspace_button.pack()
+
+interspace_frame.pack_forget()
+
+def show_registration_frame():
+    logged_in_frame.pack_forget()
+    main_frame.pack_forget()
+    interspace_frame.pack_forget()
+    reg_frame.pack()
+
+def show_login_frame():
+    reg_frame.pack_forget()
+    main_frame.pack_forget()
+    interspace_frame.pack_forget()
+    logged_in_frame.pack()
+
+def show_interspace_frame():
+    reg_frame.pack_forget()
+    logged_in_frame.pack_forget()
+    main_frame.pack_forget()
+    interspace_frame.pack()
+
+choice_label = tk.Label(root, text="Choose:")
+choice_label.pack()
+
+login_choice_button = tk.Button(root, text="Login", command=show_login_frame)
+login_choice_button.pack()
+
+register_choice_button = tk.Button(root, text="Register", command=show_registration_frame)
+register_choice_button.pack()
+
+interspace_choice_button = tk.Button(root, text="Interspace Recovery", command=show_interspace_frame)
+interspace_choice_button.pack()
+
 root.mainloop()
